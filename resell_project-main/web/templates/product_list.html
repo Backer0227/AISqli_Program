@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전체 상품 - 중고거래 마켓플레이스</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎃</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .nav {
+            display: flex;
+            gap: 20px;
+        }
+        .nav a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .nav a:hover {
+            background-color: rgba(255,255,255,0.2);
+        }
+        .btn-primary {
+            background-color: rgb(255, 72, 0);
+            color: #FF6B6B;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .filter-row:last-child {
+            margin-bottom: 0;
+        }
+        .filter-group {
+            flex: 1;
+            min-width: 150px;
+        }
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #FF6B6B;
+        }
+        .search-form {
+            display: flex;
+            gap: 10px;
+        }
+        .search-form input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-filter {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-reset {
+            padding: 10px 20px;
+            background: #e0e0e0;
+            color: #333;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .product-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .product-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            object-fit: cover;
+        }
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .product-info {
+            padding: 15px;
+        }
+        .product-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .product-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #FF6B6B;
+            margin-bottom: 5px;
+        }
+        .product-location {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .product-status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .status-selling {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .status-reserved {
+            background-color: #FF9800;
+            color: white;
+        }
+        .status-sold {
+            background-color: #999;
+            color: white;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+            background: white;
+            border-radius: 10px;
+        }
+        .results-info {
+            margin-bottom: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <a href="/" class="logo" style="text-decoration: none; color: white;">🛒 중고거래 마켓플레이스</a>
+            <div class="nav">
+                <a href="/">홈</a>
+                <a href="/products">전체 상품</a>
+                <a href="/chat">채팅</a>
+                {% if user %}
+                    <a href="/products/new" class="btn-primary">판매하기</a>
+                    <span style="color: white; padding: 8px 16px;">{{ user.nickname }}님</span>
+                    <a href="/logout">로그아웃</a>
+                {% else %}
+                    <a href="/products/new" class="btn-primary">판매하기</a>
+                    <a href="/login">로그인</a>
+                    <a href="/register">회원가입</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div style="padding: 12px; border-radius: 5px; margin-bottom: 20px; 
+                        {% if category == 'error' %}background-color: #ffebee; color: #c62828; border-left: 4px solid #c62828;
+                        {% elif category == 'success' %}background-color: #e8f5e9; color: #2e7d32; border-left: 4px solid #2e7d32;
+                        {% else %}background-color: #e3f2fd; color: #1565c0; border-left: 4px solid #1565c0;{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="GET" action="/products" class="filters">
+            <div class="search-form">
+                <input type="text" name="search" placeholder="상품명, 내용 검색..." value="{{ current_search }}">
+                <div class="filter-actions">
+                    <button type="submit" class="btn-filter">검색</button>
+                    <a href="/products" class="btn-reset" style="text-decoration: none; display: flex; align-items: center;">초기화</a>
+                </div>
+            </div>
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>상태</label>
+                    <select name="status">
+                        <option value="판매중" {% if current_status == '판매중' %}selected{% endif %}>판매중</option>
+                        <option value="예약중" {% if current_status == '예약중' %}selected{% endif %}>예약중</option>
+                        <option value="판매완료" {% if current_status == '판매완료' %}selected{% endif %}>판매완료</option>
+                        <option value="" {% if not current_status %}selected{% endif %}>전체</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>카테고리</label>
+                    <select name="category">
+                        <option value="">전체 카테고리</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat }}" {% if current_category == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>지역</label>
+                    <input type="text" name="location" placeholder="지역 검색..." value="{{ current_location }}">
+                </div>
+            </div>
+        </form>
+
+        <div class="results-info">
+            총 {{ products|length }}개의 상품이 있습니다.
+        </div>
+
+        {% if products %}
+        <div class="product-grid">
+            {% for product in products %}
+            <a href="/products/{{ product.id }}" class="product-card">
+                <div class="product-image">
+                    {% if product.image_url %}
+                    <img src="{{ product.image_url }}" alt="{{ product.title }}">
+                    {% else %}
+                    📦
+                    {% endif %}
+                </div>
+                <div class="product-info">
+                    <div class="product-title">{{ product.title }}</div>
+                    <div class="product-price">{{ product.price|price_format }}</div>
+                    <div class="product-location">📍 {{ product.location }}</div>
+                    <span class="product-status status-{{ product.status|lower|replace('중', '')|replace('완료', 'sold')|replace('예약', 'reserved')|replace('판매', 'selling') }}">
+                        {{ product.status }}
+                    </span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h3>상품이 없습니다</h3>
+            <p>검색 조건을 변경해보세요.</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
+

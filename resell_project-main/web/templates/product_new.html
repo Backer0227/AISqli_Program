@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>상품 등록 - 중고거래 마켓플레이스</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎃</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .nav {
+            display: flex;
+            gap: 20px;
+        }
+        .nav a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .nav a:hover {
+            background-color: rgba(255,255,255,0.2);
+        }
+        .btn-primary {
+            background-color: rgb(255, 72, 0);
+            color: #FF6B6B;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+        .form-card {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .form-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 25px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        .form-group label .required {
+            color: #FF6B6B;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 16px;
+            font-family: inherit;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #FF6B6B;
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 200px;
+        }
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: #666;
+            font-size: 14px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .btn-submit {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-submit:hover {
+            opacity: 0.9;
+        }
+        .error-message {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c62828;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #FF6B6B;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .image-preview {
+            margin-top: 10px;
+            max-width: 300px;
+            border-radius: 5px;
+            display: none;
+        }
+        .image-preview img {
+            width: 100%;
+            border-radius: 5px;
+        }
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <a href="/" class="logo" style="text-decoration: none; color: white;">🛒 중고거래 마켓플레이스</a>
+            <div class="nav">
+                <a href="/">홈</a>
+                <a href="/products">전체 상품</a>
+                <a href="/chat">채팅</a>
+                {% if user %}
+                    <a href="/products/new" class="btn-primary">판매하기</a>
+                    <span style="color: white; padding: 8px 16px;">{{ user.nickname }}님</span>
+                    <a href="/logout">로그아웃</a>
+                {% else %}
+                    <a href="/products/new" class="btn-primary">판매하기</a>
+                    <a href="/login">로그인</a>
+                    <a href="/register">회원가입</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div style="padding: 12px; border-radius: 5px; margin-bottom: 20px; 
+                        {% if category == 'error' %}background-color: #ffebee; color: #c62828; border-left: 4px solid #c62828;
+                        {% elif category == 'success' %}background-color: #e8f5e9; color: #2e7d32; border-left: 4px solid #2e7d32;
+                        {% else %}background-color: #e3f2fd; color: #1565c0; border-left: 4px solid #1565c0;{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <a href="/products" class="back-link">← 목록으로 돌아가기</a>
+        
+        <div class="form-card">
+            <h1 class="form-title">상품 등록</h1>
+            
+            {% if error %}
+            <div class="error-message">{{ error }}</div>
+            {% endif %}
+
+            <form method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>상품 이미지</label>
+                    <input type="file" name="image" accept="image/*" onchange="previewImage(this)">
+                    <small>JPG, PNG, GIF 형식만 가능합니다 (최대 16MB)</small>
+                    <div class="image-preview" id="imagePreview">
+                        <img id="previewImg" src="" alt="미리보기">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>상품명 <span class="required">*</span></label>
+                    <input type="text" name="title" required placeholder="예: 아이폰 13 Pro 판매합니다">
+                </div>
+
+                <div class="form-group">
+                    <label>상품 설명 <span class="required">*</span></label>
+                    <textarea name="description" required placeholder="상품의 상태, 사용 기간, 특징 등을 자세히 적어주세요."></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>가격 <span class="required">*</span></label>
+                        <input type="number" name="price" required placeholder="0" min="0">
+                        <small>원 단위로 입력해주세요</small>
+                    </div>
+                    <div class="form-group">
+                        <label>카테고리 <span class="required">*</span></label>
+                        <select name="category" required>
+                            <option value="">선택하세요</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat }}">{{ cat }}</option>
+                            {% endfor %}
+                            <option value="디지털/가전">디지털/가전</option>
+                            <option value="가구/인테리어">가구/인테리어</option>
+                            <option value="패션/의류">패션/의류</option>
+                            <option value="유아동/유아도서">유아동/유아도서</option>
+                            <option value="도서/티켓/문구">도서/티켓/문구</option>
+                            <option value="스포츠/레저">스포츠/레저</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>지역 <span class="required">*</span></label>
+                        <input type="text" name="location" required placeholder="예: 서울 강남구">
+                    </div>
+                    <div class="form-group">
+                        <label>상품 상태</label>
+                        <select name="status">
+                            <option value="판매중" selected>판매중</option>
+                            <option value="예약중">예약중</option>
+                            <option value="판매완료">판매완료</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>연락처</label>
+                    <input type="text" name="seller_phone" placeholder="연락처를 입력하세요 (선택사항)">
+                    <small>판매자: {{ user.nickname }}님</small>
+                </div>
+
+                <button type="submit" class="btn-submit">상품 등록하기</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function previewImage(input) {
+            const preview = document.getElementById('imagePreview');
+            const previewImg = document.getElementById('previewImg');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>채팅 목록 - 중고거래 마켓플레이스</title>
+    <style>
+        /* 기존 스타일과 유사하게 설정 */
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f5f5f5; margin: 0; }
+        .header { background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%); color: white; padding: 20px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header-content { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
+        .logo a { font-size: 24px; font-weight: bold; color: white; text-decoration: none; }
+        .nav { display: flex; gap: 20px; align-items: center; }
+        .nav a { color: white; text-decoration: none; padding: 8px 16px; border-radius: 5px; transition: background-color 0.3s; }
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        h1 { margin-bottom: 20px; }
+
+        .chat-list {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .chat-room-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .chat-room-item:last-child { border-bottom: none; }
+        .chat-room-item:hover { background-color: #f9f9f9; }
+        .product-image { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; margin-right: 15px; }
+        .room-info { flex: 1; }
+        .room-info h3 { font-size: 16px; margin: 0 0 5px; }
+        .last-message { color: #666; font-size: 14px; }
+        .room-meta { text-align: right; }
+        .last-time { font-size: 12px; color: #999; margin-bottom: 5px; }
+        .unread-badge { background-color: #FF6B6B; color: white; font-size: 12px; font-weight: bold; padding: 4px 8px; border-radius: 12px; }
+        .empty-state { text-align: center; padding: 50px; color: #999; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo"><a href="/">🛒 중고거래 마켓플레이스</a></div>
+            <div class="nav">
+                <a href="/">홈</a>
+                <a href="/products">전체 상품</a>
+                <a href="/chat">채팅</a>
+                {% if user %}
+                    <a href="/products/new">판매하기</a>
+                    <span style="color: white; padding: 8px 0;">{{ user.nickname }}님</span>
+                    <a href="/logout">로그아웃</a>
+                {% else %}
+                    <a href="/login">로그인</a>
+                    <a href="/register">회원가입</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>채팅 목록</h1>
+        <div class="chat-list" id="chatListContainer">
+            <div class="empty-state">채팅방이 없습니다.</div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentUserId = {{ user.id }};
+
+            fetch('/api/chat/rooms')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('chatListContainer');
+                    if (data.rooms && data.rooms.length > 0) {
+                        container.innerHTML = ''; // 기존 내용 삭제
+                        data.rooms.forEach(room => {
+                            const otherUserNickname = currentUserId === room.buyer_id ? room.seller_nickname : room.buyer_nickname;
+                            const roomElement = document.createElement('div');
+                            roomElement.className = 'chat-room-item';
+                            roomElement.onclick = () => { window.location.href = `/chat/room/${room.room_id}`; };
+                            
+                            let lastMessage = room.last_message ? escapeHtml(room.last_message) : '메시지가 없습니다.';
+                            if (lastMessage.length > 30) {
+                                lastMessage = lastMessage.substring(0, 30) + '...';
+                            }
+
+                            roomElement.innerHTML = `
+                                <img src="${room.product_image_url || '/static/images/product-placeholder.png'}" alt="${escapeHtml(room.product_title)}" class="product-image">
+                                <div class="room-info">
+                                    <h3>${escapeHtml(otherUserNickname)} <small>(${escapeHtml(room.product_title)})</small></h3>
+                                    <p class="last-message">${lastMessage}</p>
+                                </div>
+                                <div class="room-meta">
+                                    <p class="last-time">${formatTime(room.last_message_time)}</p>
+                                    ${room.unread_count > 0 ? `<span class="unread-badge">${room.unread_count}</span>` : ''}
+                                </div>
+                            `;
+                            container.appendChild(roomElement);
+                        });
+                    }
+                })
+                .catch(error => console.error('채팅 목록 로드 오류:', error));
+        });
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatTime(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (days > 0) return `${days}일 전`;
+            if (hours > 0) return `${hours}시간 전`;
+            if (minutes > 0) return `${minutes}분 전`;
+            return '방금 전';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>채팅 - {{ room.product_title }}</title>
+    <style>
+        /* 기존 chat.html 스타일과 거의 동일 */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f5f5f5; height: 100vh; display: flex; flex-direction: column; }
+        .header { background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%); color: white; padding: 15px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header-content { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
+        .logo a { font-size: 24px; font-weight: bold; color: white; text-decoration: none; }
+        .nav { display: flex; gap: 20px; align-items: center; }
+        .nav a { color: white; text-decoration: none; padding: 8px 16px; border-radius: 5px; }
+        .chat-container { flex: 1; max-width: 800px; margin: 20px auto; width: 100%; padding: 0 20px; display: flex; flex-direction: column; height: calc(100vh - 140px); }
+        .chat-header { background: white; padding: 15px 20px; border-radius: 10px 10px 0 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-bottom: 1px solid #eee; }
+        .chat-header h2 { font-size: 18px; margin-bottom: 5px; color: #333; }
+        .chat-header p { color: #666; font-size: 14px; }
+        .back-link { display: inline-block; margin-bottom: 10px; color: #FF6B6B; text-decoration: none; font-weight: 500; }
+        .messages-container { flex: 1; background: #f7f9fc; padding: 20px; overflow-y: auto; }
+        .message { margin-bottom: 15px; display: flex; flex-direction: column; }
+        .message.sent { align-items: flex-end; }
+        .message.received { align-items: flex-start; }
+        .message-bubble { max-width: 70%; padding: 12px 16px; border-radius: 18px; word-wrap: break-word; line-height: 1.5; }
+        .message.sent .message-bubble { background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%); color: white; border-bottom-right-radius: 4px; }
+        .message.received .message-bubble { background: white; color: #333; border: 1px solid #eee; border-bottom-left-radius: 4px; }
+        .message-info { font-size: 11px; color: #999; margin-top: 5px; padding: 0 10px; }
+        .message-input-container { background: white; padding: 20px; border-top: 1px solid #eee; display: flex; gap: 10px; }
+        .message-input { flex: 1; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 25px; font-size: 16px; outline: none; }
+        .message-input:focus { border-color: #FF6B6B; }
+        .send-button { padding: 12px 24px; background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%); color: white; border: none; border-radius: 25px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .empty-state { text-align: center; padding: 40px; color: #999; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo"><a href="/">🛒 중고거래 마켓플레이스</a></div>
+            <div class="nav">
+                <a href="/">홈</a>
+                <a href="/products">전체 상품</a>
+                <a href="/chat">채팅</a>
+                {% if user %}
+                    <a href="/products/new">판매하기</a>
+                    <span style="color: white; padding: 8px 0;">{{ user.nickname }}님</span>
+                    <a href="/logout">로그아웃</a>
+                {% else %}
+                    <a href="/login">로그인</a>
+                    <a href="/register">회원가입</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <a href="/chat" class="back-link">← 채팅 목록으로</a>
+            <h2>{{ room.product_title }}</h2>
+            <p>상대방: <strong>{{ other_user.nickname }}</strong></p>
+        </div>
+
+        <div class="messages-container" id="messagesContainer">
+            <div class="empty-state">대화를 시작해보세요!</div>
+        </div>
+
+        <div class="message-input-container">
+            <input type="text" 
+                   class="message-input" 
+                   id="messageInput" 
+                   placeholder="메시지를 입력하세요..."
+                   onkeypress="if(event.key === 'Enter') sendMessage()">
+            <button class="send-button" onclick="sendMessage()">전송</button>
+        </div>
+    </div>
+
+    <script>
+        const roomId = {{ room.id }};
+        const currentUserId = {{ user.id }};
+        let lastMessageId = 0;
+        let pollInterval;
+
+        function loadMessages() {
+            fetch(`/api/chat/room/${roomId}/messages?last_id=${lastMessageId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.messages && data.messages.length > 0) {
+                        const container = document.getElementById('messagesContainer');
+                        const emptyState = container.querySelector('.empty-state');
+                        if (emptyState) emptyState.remove();
+                        
+                        data.messages.forEach(msg => {
+                            addMessageToDOM(msg);
+                            lastMessageId = msg.id;
+                        });
+                        
+                        if (lastMessageId === 0) { // 첫 로드일 때만 맨 아래로 스크롤
+                            container.scrollTop = container.scrollHeight;
+                        } else { // 새 메시지 도착 시 아래로 스크롤
+                            container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+                        }
+                    }
+                })
+                .catch(error => console.error('메시지 로드 오류:', error));
+        }
+
+        function addMessageToDOM(msg) {
+            const container = document.getElementById('messagesContainer');
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${msg.sender_id == currentUserId ? 'sent' : 'received'}`;
+            
+            messageDiv.innerHTML = `
+                <div class="message-bubble">${escapeHtml(msg.message)}</div>
+                <div class="message-info">${msg.sender_nickname} · ${formatTime(msg.created_at)}</div>
+            `;
+            
+            container.appendChild(messageDiv);
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            fetch(`/api/chat/room/${roomId}/send`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    input.value = '';
+                    loadMessages(); // 즉시 새 메시지 로드
+                } else {
+                    alert('메시지 전송 실패: ' + (data.error || '알 수 없는 오류'));
+                }
+            })
+            .catch(error => {
+                console.error('전송 오류:', error);
+                alert('메시지 전송 중 오류가 발생했습니다.');
+            });
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatTime(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        }
+
+        // 초기 메시지 로드 및 폴링 시작
+        loadMessages();
+        pollInterval = setInterval(loadMessages, 3000);
+
+        window.addEventListener('beforeunload', () => {
+            if (pollInterval) clearInterval(pollInterval);
+        });
+    </script>
+</body>
+</html>
