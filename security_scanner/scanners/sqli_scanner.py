@@ -254,7 +254,16 @@ class SQLiScanner(BaseScanner):
                 'evidence': self._extract_sql_error(response_text),
                 'severity': 'High'
             }
-
+        # 5️⃣ UNION-BASED
+        if self._check_union_based(response_text, baseline_text):
+            return {
+                'type': 'SQL Injection', 'vulnerability': 'Union-based SQLi',
+                'endpoint': path, 'method': method, 'parameter': param_label,
+                'payload': payload, 'status_code': response.status_code,
+                'evidence': 'UNION 데이터 노출',
+                'severity': 'High'
+            }
+            
         # 4️⃣ BOOLEAN-BASED
         if self._check_boolean_based(response_text, baseline_text):
             return {
@@ -265,15 +274,6 @@ class SQLiScanner(BaseScanner):
                 'severity': 'Medium'
             }
 
-        # 5️⃣ UNION-BASED
-        if self._check_union_based(response_text, baseline_text):
-            return {
-                'type': 'SQL Injection', 'vulnerability': 'Union-based SQLi',
-                'endpoint': path, 'method': method, 'parameter': param_label,
-                'payload': payload, 'status_code': response.status_code,
-                'evidence': 'UNION 데이터 노출',
-                'severity': 'High'
-            }
 
         return None
 
@@ -291,11 +291,13 @@ class SQLiScanner(BaseScanner):
                 return text[start:end][:200]
         return "SQL 에러 감지됨"
 
+    def _check_union_based(self, resp_text: str, base_text: str) -> bool:
+        """Union-based 탐지"""
+        return 'union' in resp_text and len(resp_text) > len(base_text) * 1.3
+
     def _check_boolean_based(self, resp_text: str, base_text: str) -> bool:
         """Boolean-based 탐지"""
         length_diff = abs(len(resp_text) - len(base_text))
         return length_diff > len(base_text) * 0.1
 
-    def _check_union_based(self, resp_text: str, base_text: str) -> bool:
-        """Union-based 탐지"""
-        return 'union' in resp_text and len(resp_text) > len(base_text) * 1.3
+    

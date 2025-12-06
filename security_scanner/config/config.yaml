@@ -2,7 +2,7 @@
 
 # 대상 서버 설정
 target:
-  base_url: "http://localhost:80"  # Nginx를 통해 접근
+  base_url: "http://localhost:5000"  # Nginx를 통해 접근
   timeout: 10
   verify_ssl: false
 
