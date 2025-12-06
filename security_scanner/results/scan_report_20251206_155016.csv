@@ -1,0 +1,7 @@
+Type,Vulnerability,Endpoint,Method,Parameter,Status Code,Severity,Payload,Evidence
+SQL Injection,Boolean-based Blind SQLi,/search,GET,q,200,Medium,1 OR 1=1,응답 내용 변화 감지
+SQL Injection,Boolean-based Blind SQLi,/search,GET,q,200,Medium,1 OR 1=1--,응답 내용 변화 감지
+SQL Injection,Boolean-based Blind SQLi,/search,GET,q,200,Medium,1 OR 1=1#,응답 내용 변화 감지
+SQL Injection,Boolean-based Blind SQLi,/api/users,GET,username,200,Medium,1 OR 1=1,응답 내용 변화 감지
+SQL Injection,Boolean-based Blind SQLi,/api/users,GET,username,200,Medium,1 OR 1=1--,응답 내용 변화 감지
+SQL Injection,Boolean-based Blind SQLi,/api/users,GET,username,200,Medium,1 OR 1=1#,응답 내용 변화 감지

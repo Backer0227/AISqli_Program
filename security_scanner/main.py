@@ -6,10 +6,16 @@ SQL Injection 및 XSS 취약점을 자동으로 진단합니다.
 import sys
 import argparse
 from pathlib import Path
+import json
+import subprocess
+import os
+from datetime import datetime
+
 
 # 프로젝트 루트를 Python 경로에 추가
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
+
 
 from utils.config_loader import ConfigLoader
 from utils.http_client import HTTPClient
@@ -19,6 +25,7 @@ from utils.report_generator import ReportGenerator
 from utils.endpoint_discoverer import EndpointDiscoverer
 from scanners.sqli_scanner import SQLiScanner
 from scanners.xss_scanner import XSSScanner
+
 
 
 def main():
@@ -184,16 +191,47 @@ def main():
     
     # 생성된 파일 경로 출력
     print("\n생성된 리포트 파일:")
+    json_file_path = None
     for format_type, file_path in generated_files.items():
         print(f"  - {format_type.upper()}: {file_path}")
+        if format_type == 'json':
+            json_file_path = file_path
     
     print("\n" + "="*60)
     print("스캔 완료")
     print("="*60)
+    
+    # ✅ 수정된 report_viewer.py 자동 호출 (안전한 방법)
+    if json_file_path and os.path.exists(json_file_path):
+        results_dir = Path("results")
+        results_dir.mkdir(exist_ok=True)
+        
+        print("\n📊 HTML 리포트 생성 중...")
+        try:
+            # 1. 올바른 인자 사용: 파일 경로만 또는 생략
+            subprocess.run([
+                sys.executable, "report_viewer.py", json_file_path
+            ], check=True, capture_output=True, text=True)
+            
+            html_path = json_file_path.replace('.json', '.html')
+            if os.path.exists(html_path):
+                print(f"✓ HTML 생성 완료: {html_path}")
+                print(f"🌐 브라우저 자동 열기: {html_path}")
+                # 2초 대기 후 브라우저 열기
+                subprocess.Popen(['start', html_path], shell=True)
+            else:
+                print("⚠ HTML 파일이 생성되지 않았습니다. JSON으로 확인하세요.")
+                
+        except subprocess.CalledProcessError as e:
+            print(f"⚠ report_viewer.py 실행 오류: {e}")
+            print("JSON/CSV 리포트로 결과를 확인하세요.")
+        except FileNotFoundError:
+            print("⚠ report_viewer.py 파일을 찾을 수 없습니다.")
+    else:
+        print("❌ JSON 리포트 파일을 찾을 수 없습니다.")
     
     return 0
 
 
 if __name__ == "__main__":
     sys.exit(main())
-

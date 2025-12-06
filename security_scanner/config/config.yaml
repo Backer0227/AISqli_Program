@@ -2,85 +2,47 @@
 
 # 대상 서버 설정
 target:
-  base_url: "http://192.168.100.85:80"  # Nginx를 통해 접근
+  base_url: "http://localhost:5000"  # Nginx를 통해 접근
   timeout: 10
   verify_ssl: false
 
 # 인증 정보 (로그인이 필요한 엔드포인트 테스트용)
 auth:
   enabled: true
-  login_url: "/login"
-  login_username: "test_user"
-  login_password: "test_password"
-  register_url: "/register"
-  register_data:
-    username: "scanner_test"
-    password: "scanner123"
-    password_confirm: "scanner123"
-    nickname: "ScannerTest"
-    email: "scanner@test.com"
+  login_url: "/login"  
+  login_username: "123456"
+  login_password: "123456"
+  content_type: "application/json"
 
 # 스캔 설정
 scan:
-  threads: 5  # 동시 스레드 수
-  delay: 0.05  # 요청 간 지연 시간 (초)
-  max_retries: 3
+  threads: 6   # 부하 줄임
+  delay: 0.08   # 요청 간격 늘림
+  max_retries: 2
   follow_redirects: true
 
 # 리포트 설정
 report:
-  format: ["json", "csv"]  # json, csv, html
+  format: ["json", "csv", "html"]
   output_dir: "results"
   include_payloads: true
   include_evidence: true
 
-# 엔드포인트 설정 (자동 탐지 또는 수동 설정)
+# 엔드포인트 설정 (실제 크롤링만)
 endpoints:
-  # 자동 탐지 활성화
-  auto_detect: true  # true: 자동 탐지, false: 수동 설정 사용
+  # 자동 탐지: HTML 크롤링만
+  auto_detect: true
   
-  # 자동 탐지 설정
+  # 실제 testphp.vulnweb.com 크롤링만
   discovery:
-    enable_crawling: true      # HTML 크롤링 활성화
-    enable_source_analysis: true  # Flask 소스 코드 분석 활성화
-    source_path: null          # Flask 앱 파일 경로 (null이면 자동 탐색)
-                              # 예: "../resell_project-main/web/app.py"
-  
-  # 수동으로 추가할 엔드포인트 (auto_detect가 false일 때 사용)
-  manual:
-    # 상품 목록 (GET 파라미터 테스트)
-    - path: "/products"
-      method: "GET"
-      params: ["category", "location", "search", "status"]
-      requires_auth: false
+    enable_crawling: true       # ✅ 실제 사이트 링크만 수집
+    enable_source_analysis: false # ❌ Flask 가상 엔드포인트 제거
     
-    # 상품 상세 (URL 경로 변수는 path_variables로 지정)
-    - path: "/products/{product_id}"
-      method: "GET"
-      params: []  # URL 경로 변수는 params가 아님
-      path_variables:
-        product_id: "1"  # 기본값 (실제 존재하는 상품 ID로 변경 가능)
-      requires_auth: false
-    
-    # 상품 등록 (POST 파라미터 테스트)
-    - path: "/products/new"
-      method: "POST"
-      params: ["title", "description", "price", "category", "location"]
-      requires_auth: true
-    
-    # 채팅 메시지 조회 (URL 경로 변수 + GET 파라미터)
-    - path: "/api/chat/room/{room_id}/messages"
-      method: "GET"
-      params: ["last_id"]
-      path_variables:
-        room_id: "1"  # 기본값 (실제 존재하는 room_id로 변경 가능)
-      requires_auth: true
-    
-    # 채팅 메시지 전송 (URL 경로 변수 + POST 파라미터)
-    - path: "/api/chat/room/{room_id}/send"
-      method: "POST"
-      params: ["message"]
-      path_variables:
-        room_id: "1"  # 기본값 (실제 존재하는 room_id로 변경 가능)
-      requires_auth: true
+    # HTML 크롤링 설정
+    HTML:
+      enable_crawling: true
+      max_depth: 3
+      max_links: 100
 
+  # 수동 엔드포인트 완전 제거 (실제 크롤링만 사용)
+  manual: []
